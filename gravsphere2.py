@@ -2,11 +2,50 @@
 #GravSphere 2
 ###########################################################
 
-#Choose the specific object with initialisation file defining priors, Rhalf, velocities and photometry data 
+#Choose the specific object with initialisation file defining priors, Rhalf, velocities and photometry data
+#
+#Set with the GS2_OBJECT environment variable, so nothing in this file has to be
+#edited to switch object -- which matters for the plotting notebooks, where an
+#edit here silently sends 'diro' (and so the restored sampler chain) at another
+#galaxy's Output/ tree:
+#
+#    notebook:  import os; os.environ['GS2_OBJECT'] = 'LeoII'
+#               # must come BEFORE 'from gravsphere2 import *', and needs a
+#               # kernel restart if gravsphere2 was already imported
+#    shell:     GS2_OBJECT=Seg1 python run_Seg1.py 32 resume
+#
+#The default below is what a bare import gets, i.e. the old file-edit behaviour.
 
-from initialise_Fornax import *
-#from initialise_PlumCoreOm import *
-#from initialise_PlumCuspOm import *
+import os as _os
+
+_gs2_objects = {'Fornax':     'initialise_Fornax',
+                'Seg1':       'initialise_Seg1',
+                'Seg2':       'initialise_Seg2',
+                'PlumCoreOm': 'initialise_PlumCoreOm',
+                'PlumCuspOm': 'initialise_PlumCuspOm',
+                'LeoII':      'initialise_LeoII'}
+
+_gs2_object = _os.environ.get('GS2_OBJECT', 'LeoII')
+
+if _gs2_object not in _gs2_objects:
+    raise ValueError(f"GS2_OBJECT = {_gs2_object!r}; expected one of "
+                     f"{sorted(_gs2_objects)}")
+
+print(f'[gravsphere2] GS2_OBJECT = {_gs2_object} '
+      f'-> from {_gs2_objects[_gs2_object]} import *')
+
+if _gs2_object == 'Fornax':
+    from initialise_Fornax import *
+elif _gs2_object == 'Seg1':
+    from initialise_Seg1 import *
+elif _gs2_object == 'Seg2':
+    from initialise_Seg2 import *
+elif _gs2_object == 'PlumCoreOm':
+    from initialise_PlumCoreOm import *
+elif _gs2_object == 'PlumCuspOm':
+    from initialise_PlumCuspOm import *
+elif _gs2_object == 'LeoII':
+    from initialise_LeoII import *
 
 #imports functions for velocity PDF modeling from (Sanders & Evans 2020), link: https://arxiv.org/abs/2009.07858
 #link to J. Sanders's GitHub repository: https://github.com/jls713/gh_alternative
@@ -62,7 +101,14 @@ else: #photometric profile fit (fits individual stellar positions, most accurate
        #Plummer corresponds to alp, bet, gam = 2, 5, 0.0
        #To ensure positivity and convergence, we need alp > 0, bet > 3, gamm < 3
         nupars_min = np.array([np.log10(Rhalf) - 1.0, 0.1, 3.1, 0.0])
-        nupars_max = np.array([np.log10(Rhalf) + 1.0, 4.0, 7.0, 2.9])
+        #nupars_max = np.array([np.log10(Rhalf) + 1.0, 4.0, 7.0, 2.9])  #stock: gam_phot up to 2.9
+        #gam_phot capped at 1.0: a stellar cusp steeper than NFW is unphysical, and
+        #the loose stock bound lets the light profile absorb structure the mass model should carry.
+
+        '''
+        CHANGED FOR SEGUE II from 4, 7 to 8, 12 for alpha and beta
+        '''
+        nupars_max = np.array([np.log10(Rhalf) + 1.0, 8.0, 12.0, 1.0])
 
         nu_components = 4
 

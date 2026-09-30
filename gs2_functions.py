@@ -690,8 +690,9 @@ def betaf(r,betpars):
     bet0 = betpars[0]
     betinf = betpars[1]
 
-    betafn = r**(2.0*betinf)*((rt/r)**n+1.0)**(2.0/n*(betinf-bet0))
-    
+    log_bf = 2.0*betinf*np.log(r) + (2.0/n)*(betinf-bet0)*np.log1p((rt/r)**n)
+    betafn = np.exp(log_bf)
+
     return betafn
 
 
